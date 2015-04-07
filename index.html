@@ -1,0 +1,166 @@
+<html lang="en"><head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Reading a local file with the File API</title>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <!-- <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script> -->
+
+    <link rel="stylesheet" href="./jszip/documentation/css/pygments.css">
+    <link rel="stylesheet" href="./jszip/documentation/css/main.css">
+
+    <script type="text/javascript" src="http://stuk.github.io/jszip-utils/dist/jszip-utils.js"></script>
+    <script type="text/javascript" src="./jszip/dist/jszip.js"></script>
+    <!--
+    Mandatory in IE 6, 7, 8 and 9.
+    -->
+    <!--[if IE]>
+    <script type="text/javascript" src="//stuk.github.io/jszip-utils/dist/jszip-utils-ie.js"></script>
+    <![endif]-->
+
+    <!--
+    Any version of jQuery will do (it's just to write some examples), this one
+    happens to be available in our tests.
+    -->
+    <script type="text/javascript" src="./jszip/test/jquery-1.8.3.min.js"></script>
+
+    <script type="text/javascript" src="./jszip/vendor/FileSaver.js"></script>
+  </head>
+  <body cz-shortcut-listen="true">
+    <div class="container">
+      <div class="navbar navbar-default" role="navigation">
+        <div class="container-fluid">
+          <div class="navbar-header">
+            <a class="navbar-brand" href="/jszip/"><strong>JS</strong>Zip</a>
+          </div>
+          <ul class="nav navbar-nav">
+            <li>
+              <a href="/jszip/documentation/api_jszip.html">API</a>
+            </li>
+            <li class="active">
+              <a href="/jszip/documentation/examples.html">How to / examples</a>
+            </li>
+            <li>
+              <a href="/jszip/documentation/limitations.html">Performances / limitations</a>
+            </li>
+          </ul>
+          <ul class="nav navbar-nav navbar-right">
+            <li>
+              <a href="https://github.com/Stuk/jszip">JSZip on Github</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="row">
+        
+        <div class="col-md-9">
+          <h1>Reading a local file with the File API</h1>
+          <!-- ===================== -->
+          <!-- === C O N T E N T === -->
+          <!-- ===================== -->
+
+          <h3>Choose the local(s) zip file(s)</h3>
+<p class="note">Note : your browser will process the zip file, don't choose a file too big !</p>
+<input type="file" id="file" name="file" multiple=""><br>
+
+<div id="error_block" class="alert alert-danger hidden">
+  You will need a recent browser to use this demo :(
+</div>
+
+<div id="result_block" class="hidden">
+  <h3>Content :</h3>
+  <div id="result"></div>
+</div>
+<script type="text/javascript" src="./jszip/test/jquery-1.8.3.min.js"></script>
+<script type="text/javascript">
+(function () {
+  if (!window.FileReader || !window.ArrayBuffer) {
+    $("#error_block").removeClass("hidden").addClass("show");
+    return;
+  }
+
+
+  var $result = $("#result");
+  $("#file").on("change", function(evt) {
+    // remove content
+    $result.html("");
+    // be sure to show the results
+    $("#result_block").removeClass("hidden").addClass("show");
+
+    // see http://www.html5rocks.com/en/tutorials/file/dndfiles/
+
+    var files = evt.target.files;
+    for (var i = 0, f; f = files[i]; i++) {
+
+      var reader = new FileReader();
+
+      // Closure to capture the file information.
+      reader.onload = (function(theFile) {
+        return function(e) {
+          var $title = $("<h4>", {
+            text : theFile.name
+          });
+          $result.append($title);
+          var $fileContent = $("<ul>");
+
+          try {
+            var zip = new JSZip(e.target.result);
+            var exportText = zip.folder("META-INF").file("export.log").asText();
+            var lines = exportText.split('\n');
+
+
+            for(var line = 1; line < lines.length; line++){ 
+              // Skip the first line of the export log (line = 1)
+              // End when the list of objects is done (at a blank line)
+              if (lines[line].length <= 1) { break; }
+              
+              $fileContent.append($("<li>", {
+                text : lines[line]
+              }));
+            }
+          } catch(e) {
+            $fileContent = $("<div>", {
+              "class" : "alert alert-danger",
+              text : "Error reading " + theFile.name + " : " + e.message
+            });
+          }
+          $result.append($fileContent);
+        }
+      })(f);
+
+      // read the file !
+      // readAsArrayBuffer and readAsBinaryString both produce valid content for JSZip.
+      reader.readAsArrayBuffer(f);
+      // reader.readAsBinaryString(f);
+    }
+  });
+})();
+</script>
+
+
+          <!-- ===================== -->
+          <!-- == / C O N T E N T == -->
+          <!-- ===================== -->
+        </div>
+      </div>
+    </div>
+    <script>
+      // FIXME find how to do that cleanly
+      (function(){
+        var tables = document.getElementsByTagName("table");
+        for(var i = 0; i < tables.length; i++) {
+          tables[i].className += " table table-condensed table-striped table-bordered ";
+        }
+      })();
+    </script>
+
+
+</body></html>
