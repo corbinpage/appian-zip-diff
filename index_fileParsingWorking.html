@@ -56,22 +56,27 @@
           </ul>
         </div>
       </div>
+      
+
+
+
       <div class="row">
+        
         <div class="col-md-9">
           <h1>Quickly see overlapping objects</h1>
           <h3>Choose the application zip files to compare.</h3>
-          <p class="note">Note : your browser will process the zip file, don't choose a file too big !</p>
-          <input type="file" id="file" name="file" multiple=""><br>
-          <div id="error_block" class="alert alert-danger hidden">
-            You will need a recent browser to use this demo :(
-          </div>
-        </div>
-      </div>
-      <div id="result_block" class="row hidden">
-        <h3>Content :</h3>
-        <div id="result" class="col-xs-12"></div>
 
-      </div>
+<p class="note">Note : your browser will process the zip file, don't choose a file too big !</p>
+<input type="file" id="file" name="file" multiple=""><br>
+
+<div id="error_block" class="alert alert-danger hidden">
+  You will need a recent browser to use this demo :(
+</div>
+
+<div id="result_block" class="hidden">
+  <h3>Content :</h3>
+  <div id="result"></div>
+</div>
 <script type="text/javascript" src="./jszip/test/jquery-1.8.3.min.js"></script>
 <script type="text/javascript">
 (function () {
@@ -80,36 +85,56 @@
     return;
   }
 
-  var objectArray = [];
-  var duplicateCounter = 0;
+
   var $result = $("#result");
   $("#file").on("change", function(evt) {
-    $result.html(""); // remove current content
-    $("#result_block").removeClass("hidden").addClass("show"); // be sure to show the results
+    // remove content
+    $result.html("");
+    // be sure to show the results
+    $("#result_block").removeClass("hidden").addClass("show");
+
+    // see http://www.html5rocks.com/en/tutorials/file/dndfiles/
+
     var files = evt.target.files;
     for (var i = 0, f; f = files[i]; i++) {
+
       var reader = new FileReader();
 
       // Closure to capture the file information.
       reader.onload = (function(theFile) {
         return function(e) {
-          var slug = theFile.name.slice(0,theFile.name.indexOf('.')).replace(/ /g,'-');
-          $result.append('<div id="'+slug+'" class="col-sm-4"><table class="table table-hover table-bordered table-striped"><thead></thead><tbody></tbody></table></div>');
-          $("#"+slug+" table thead").append("<th>"+theFile.name+"</th>");
-
+          var $title = $("<h4>", {
+            text : theFile.name
+          });
+          $result.append($title);
+          var $fileContent = $("<ul>");
           try {
-            var zip = new JSZip(e.target.result); 
-            var exportLog = zip.folder("META-INF").file("export.log");
-            var exportText = exportLog.asText();
-            objectArray = parseExportLog(exportText,theFile.name,objectArray,slug);
-            // console.log(objectArray);
+
+            var dateBefore = new Date();
+            // read the content of the file with JSZip
+            var zip = new JSZip(e.target.result);
+            var dateAfter = new Date();
+
+            $title.append($("<span>", {
+              text:" (parsed in " + (dateAfter - dateBefore) + "ms)"
+            }));
+
+            // that, or a good ol' for(var entryName in zip.files)
+            $.each(zip.files, function (index, zipEntry) {
+              $fileContent.append($("<li>", {
+                text : zipEntry.name
+              }));
+              // the content is here : zipEntry.asText()
+            });
+            // end of the magic !
 
           } catch(e) {
-            var $fileContent = $("<div>", {
+            $fileContent = $("<div>", {
               "class" : "alert alert-danger",
               text : "Error reading " + theFile.name + " : " + e.message
             });
           }
+          $result.append($fileContent);
         }
       })(f);
 
@@ -119,54 +144,6 @@
       // reader.readAsBinaryString(f);
     }
   });
-
-function parseExportLog(exportText, filename, objectArray,slug) {
-  var $fileContent = $("<ul>");
-  var lines = exportText.split('\n');
-
-  for(var line = 1; line < lines.length; line++){ 
-    // Skip the first line of the export log (line = 1)
-    // End when the list of objects is done (at a blank line)
-    if (lines[line].length <= 1) { break; }
-
-    var exportLine = lines[line].split(' ');
-    var objName = lines[line].slice(lines[line].indexOf('"')).replace(/"/g,'');
-    var dupInfo = isDuplicateObject(exportLine, objectArray);
-    
-    var newObject = {
-        type: exportLine[0],
-        id: exportLine[1],
-        uuid: exportLine[2],
-        name: objName,
-        filename: filename,
-        duplicate: dupInfo[0],
-        dupNum: dupInfo[1]
-    };
-    objectArray.push(newObject);
-
-    console.log("here");
-    var obj = $("#"+slug+" table tbody");
-    console.log(obj);
-    obj.append('<tr><td><p>'+newObject.name+'</p></td></tr>');
-  }
-  return objectArray;
-}
-
-function isDuplicateObject(exportLine, objectArray) {
-  for (var i = 0, l = objectArray.length; i < l; i++) {
-    if(exportLine[2]==objectArray[i].uuid){
-      duplicateCounter++;
-      objectArray[i].duplicate = true;
-      objectArray[i].dupNum = duplicateCounter;
-
-      return [true, duplicateCounter];
-    }
-  }
-    return [false, null];
-}
-
-
-
 })();
 </script>
 
