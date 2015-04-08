@@ -2,7 +2,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Reading a local file with the File API</title>
+    <title>AppianZipDiff | Easily compare Appian packages.</title>
 
     <!-- Latest compiled and minified CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
@@ -38,22 +38,20 @@
       <div class="navbar navbar-default" role="navigation">
         <div class="container-fluid">
           <div class="navbar-header">
-            <a class="navbar-brand" href="/jszip/"><strong>JS</strong>Zip</a>
+            <a class="navbar-brand" href="#"><strong>AppianZipDiff</strong></a>
           </div>
           <ul class="nav navbar-nav">
             <li>
-              <a href="/jszip/documentation/api_jszip.html">API</a>
+              <a href="https://www.forum.appian.com">Appian Forum</a>
             </li>
-            <li class="active">
-              <a href="/jszip/documentation/examples.html">How to / examples</a>
-            </li>
+
             <li>
-              <a href="/jszip/documentation/limitations.html">Performances / limitations</a>
+              <a href="https://www.corbinpage.com">Build by Corbin</a>
             </li>
           </ul>
           <ul class="nav navbar-nav navbar-right">
             <li>
-              <a href="https://github.com/Stuk/jszip">JSZip on Github</a>
+              <a href="https://github.com/corbinpage/appian-zip-diff">Code on Github</a>
             </li>
           </ul>
         </div>
@@ -62,12 +60,8 @@
       <div class="row">
         
         <div class="col-md-9">
-          <h1>Reading a local file with the File API</h1>
-          <!-- ===================== -->
-          <!-- === C O N T E N T === -->
-          <!-- ===================== -->
-
-          <h3>Choose the local(s) zip file(s)</h3>
+          <h1>Quickly see overlapping objects</h1>
+          <h3>Choose the application zip files to compare.</h3>
 <p class="note">Note : your browser will process the zip file, don't choose a file too big !</p>
 <input type="file" id="file" name="file" multiple=""><br>
 
@@ -87,62 +81,111 @@
     return;
   }
 
-
   var $result = $("#result");
   $("#file").on("change", function(evt) {
+    var packages = new Object(); 
     // remove content
     $result.html("");
     // be sure to show the results
     $("#result_block").removeClass("hidden").addClass("show");
 
-    // see http://www.html5rocks.com/en/tutorials/file/dndfiles/
-
     var files = evt.target.files;
     for (var i = 0, f; f = files[i]; i++) {
-
       var reader = new FileReader();
+      var fileContentData = reader.readAsBinaryString(f);
+      console.log(fileContentData);
 
-      // Closure to capture the file information.
-      reader.onload = (function(theFile) {
-        return function(e) {
-          var $title = $("<h4>", {
-            text : theFile.name
-          });
-          $result.append($title);
-          var $fileContent = $("<ul>");
+      var $title = $("<h4>", {
+        text : f.name
+      });
+      $result.append($title);
+      var $fileContent = $("<ul>");
 
-          try {
-            var zip = new JSZip(e.target.result);
-            var exportText = zip.folder("META-INF").file("export.log").asText();
-            var lines = exportText.split('\n');
+      try {
+        // read the content of the file with JSZip
+        var zip = new JSZip(fileContent.target.result);
+        var exportLog = zip.folder("META-INF").file("export.log");
+        var exportText = exportLog.asText();
+        // console.log(exportText);
+
+        packages[f.name]= createObjectArray(exportText);
+        console.log(f.name);
+        console.log(packages);
+      } catch(e) {
+        $fileContent = $("<div>", {
+          "class" : "alert alert-danger",
+          text : "Error reading " + f.name + " : " + e.message
+        });
+      }
+      $result.append($fileContent);
 
 
-            for(var line = 1; line < lines.length; line++){ 
-              // Skip the first line of the export log (line = 1)
-              // End when the list of objects is done (at a blank line)
-              if (lines[line].length <= 1) { break; }
-              
-              $fileContent.append($("<li>", {
-                text : lines[line]
-              }));
-            }
-          } catch(e) {
-            $fileContent = $("<div>", {
-              "class" : "alert alert-danger",
-              text : "Error reading " + theFile.name + " : " + e.message
-            });
-          }
-          $result.append($fileContent);
-        }
-      })(f);
+
+      // // Closure to capture the file information.
+      // reader.onload = (function(theFile) {
+      //   return function(e) {
+      //     var $title = $("<h4>", {
+      //       text : theFile.name
+      //     });
+      //     $result.append($title);
+      //     var $fileContent = $("<ul>");
+      //     try {
+      //       // read the content of the file with JSZip
+      //       var zip = new JSZip(e.target.result);
+      //       var exportLog = zip.folder("META-INF").file("export.log");
+      //       var exportText = exportLog.asText();
+      //       // console.log(exportText);
+
+      //       packages[theFile.name]= createObjectArray(exportText);
+      //     } catch(e) {
+      //       $fileContent = $("<div>", {
+      //         "class" : "alert alert-danger",
+      //         text : "Error reading " + theFile.name + " : " + e.message
+      //       });
+      //     }
+      //     $result.append($fileContent);
+      //   }
+      // })(f);
 
       // read the file !
       // readAsArrayBuffer and readAsBinaryString both produce valid content for JSZip.
-      reader.readAsArrayBuffer(f);
+      // reader.readAsArrayBuffer(f);
       // reader.readAsBinaryString(f);
     }
+    console.log(packages);
   });
 })();
+
+function processObjects(packages) {
+    console.log(packages);
+}
+
+function createObjectArray(exportText) {
+  var objectArray = [];
+  var $fileContent = $("<ul>");
+  var lines = exportText.split('\n');
+
+  for(var line = 1; line < lines.length; line++){ 
+    // Skip the first line of the export log (line = 1)
+    // End when the list of objects is done (at a blank line)
+    if (lines[line].length <= 1) { break; }
+
+    var exportLine = lines[line].split(' ');
+    
+    objectArray.push({
+        type: exportLine[0],
+        id: exportLine[1],
+        uuid: exportLine[2],
+        name: exportLine[3].replace('"','')
+    });
+
+    $fileContent.append($("<li>", {
+      text : lines[line]
+    }));
+  }
+  return objectArray;
+}
+
 </script>
 
 
