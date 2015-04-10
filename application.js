@@ -24,13 +24,19 @@
           try {
             var zip = new JSZip(e.target.result); 
             var exportLog = zip.folder("META-INF").file("export.log");
-            var exportText = exportLog.asText();
-            objectArray = parseExportLog(exportText,theFile.name,objectArray);
+
+            console.log(exportLog);
+            console.log(!exportLog);
+            if(exportLog) {
+              var exportText = exportLog.asText();
+              objectArray = parseExportLog(exportText,theFile.name,objectArray);           
+            }
             fileCounter++;
             if(fileCounter===files.length) {
               renderUI(objectArray);
-            }
+            }   
           } catch(e) {
+            fileCounter++;
             var $fileContent = $("<div>", {
               "class" : "alert alert-danger",
               text : "Error reading " + theFile.name + " : " + e.message
