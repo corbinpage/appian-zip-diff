@@ -1,22 +1,29 @@
 (function () {
+  // Show an error if using an older browser
   if (!window.FileReader || !window.ArrayBuffer) {
     $("#error_block").removeClass("hidden").addClass("show");
     return;
   }
 
+  var fileCounter;
   var objectArray = [];
   var duplicateCounter;
-  var fileCounter;
-  var $result = $("#result");
+
   $("#file").on("change", function(evt) {
+    var files = evt.target.files;
     var fileCounter = 0;
     objectArray = [];
     duplicateCounter = 0;
-    $result.html(""); // remove current content
-    $("#result_block").removeClass("hidden").addClass("show"); // be sure to show the results
-    var files = evt.target.files;
+    $("#results-table tbody").html(""); // remove current content
+    $("#results-row").removeClass("hidden");
+    
     for (var i = 0, f; f = files[i]; i++) {
-      if(f.name.slice(f.name.lastIndexOf("."))!==".zip") {fileCounter++; continue;} //Skip non-zipfiles
+      //Skip non-zip files
+      if(f.name.slice(f.name.lastIndexOf("."))!==".zip") {
+        fileCounter++;
+        continue;
+      } 
+
       var reader = new FileReader();
       // Closure to capture the file information.
       reader.onload = (function(theFile) {
@@ -25,8 +32,6 @@
             var zip = new JSZip(e.target.result); 
             var exportLog = zip.folder("META-INF").file("export.log");
 
-            console.log(exportLog);
-            console.log(!exportLog);
             if(exportLog) {
               var exportText = exportLog.asText();
               objectArray = parseExportLog(exportText,theFile.name,objectArray);           
@@ -47,7 +52,6 @@
 
       reader.readAsArrayBuffer(f);
     }
-
   });
 
 function parseExportLog(exportText, filename, objectArray) {
@@ -96,21 +100,7 @@ function isDuplicateObject(exportLine, objectArray) {
   return [false, null];
 }
 
-
-
 function renderUI(objectArray) {
-  $result.append('<div class="col-sm-12">' +
-                 '<table id="results-table" class="table table-hover table-bordered table-striped table-condensed tablesorter">' +
-                 '<thead>' +
-                 '<th>Package</th>' +
-                 '<th>Object</th>' +
-                 '<th>Type</th>' +
-                 '<th>Duplicate</th>' +
-                 '</thead>' +
-                 '<tbody></tbody>' +
-                 '</table>' +
-                 '</div>');
-
   var $tableBody = $("#results-table tbody");
   objectArray.forEach( function (object) {
     $tableBody.append(
