@@ -5,10 +5,13 @@
   }
 
   var objectArray = [];
-  var duplicateCounter = 0;
-  var fileCounter = 0;
+  var duplicateCounter;
+  var fileCounter;
   var $result = $("#result");
   $("#file").on("change", function(evt) {
+    var fileCounter = 0;
+    objectArray = [];
+    duplicateCounter = 0;
     $result.html(""); // remove current content
     $("#result_block").removeClass("hidden").addClass("show"); // be sure to show the results
     var files = evt.target.files;
@@ -48,14 +51,12 @@ function parseExportLog(exportText, filename, objectArray) {
   for(var line = 0; line < lines.length; line++){
     if(!seenSuccess) { 
       seenSuccess = (lines[line].search("Success")===0);
-      console.log("continue");
       continue;
       // Only start parsing objects that have been 'Success'-fully exported
     } else if(seenSuccess && lines[line].length<=1) {
       break;
       // End when the list of objects is done (at a blank line)
     }
-
 
     var exportLine = lines[line].split(' ');
     var objName = lines[line].slice(lines[line].indexOf('"')).replace(/"/g,'');
