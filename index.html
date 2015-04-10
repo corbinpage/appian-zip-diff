@@ -42,153 +42,43 @@
         <div class="navbar-header">
           <a class="navbar-brand" href="#"><strong>AppianZipDiff</strong></a>
         </div>
-        <ul class="nav navbar-nav">
-          <li>
-            <a href="https://forum.appian.com/suite/tempo" target="_blank">Appian Forum</a>
-          </li>
-        </ul>
         <ul class="nav navbar-nav navbar-right">
           <li>
-            <a href="https://github.com/corbinpage/appian-zip-diff" target="_blank">Code on Github</a>
+            <a href="https://forum.appian.com/suite/tempo" target="_blank">Appian Forum</a>
           </li>
         </ul>
       </div>
     </div>
     <div class="row">
-      <div class="col-md-7">
-        <h1>Upload multiple Appian Packages</h1>
-        <h3>Choose the application zip files below and see if they include any of the same objects.</h3>
-<!--         <p class="note">Note : your browser will process the zip file, don't choose a file too big !</p> -->
-        <input type="file" id="file" name="file" multiple=""><br>
-        <div id="error_block" class="alert alert-danger hidden">
-          You will need a recent browser to use this demo :(
+      <div class="col-xs-12 col-md-12">    
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h2>Upload multiple Appian Packages</h2>
+            <h4><small>Use the button below to select the application zip files you would like to compare.</small></h4> 
+          </div>
+          <div class="panel-body">
+            <input type="file" id="file" name="file" multiple=""><br>
+            <div id="error_block" class="alert alert-danger hidden">
+              You will need a recent browser to use this app :(
+            </div>
+            <div id="result_block" class="row hidden">
+              <div id="result" class="col-xs-12"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    <div id="result_block" class="row hidden">
-      <h3>Content :</h3>
-      <div id="result" class="col-xs-12"></div>
-    </div>
   </div>
+  <footer class="footer">
+    <div class="container">
+      <p class="text-muted">View the code on <a href="https://github.com/corbinpage/appian-zip-diff" target="_blank">Github</a> or send any feedback to <a href="https://twitter.com/corbpage" target="_blank">Corbin Page</a>.</p>
+    </div>
+  </footer>
+
   <script type="text/javascript" src="./jszip/test/jquery-1.8.3.min.js"></script>
   <script type="text/javascript" src="./jquery-tablesorter/jquery.tablesorter.js"></script>
-  <script type="text/javascript">
-  (function () {
-    if (!window.FileReader || !window.ArrayBuffer) {
-      $("#error_block").removeClass("hidden").addClass("show");
-      return;
-    }
+  <script type="text/javascript" src="./application.js"></script>
 
-    var objectArray = [];
-    var duplicateCounter = 0;
-    var fileCounter = 0;
-    var $result = $("#result");
-    $("#file").on("change", function(evt) {
-    $result.html(""); // remove current content
-    $("#result_block").removeClass("hidden").addClass("show"); // be sure to show the results
-    var files = evt.target.files;
-    for (var i = 0, f; f = files[i]; i++) {
-      var reader = new FileReader();
-      // Closure to capture the file information.
-      reader.onload = (function(theFile) {
-        return function(e) {
-          try {
-            var zip = new JSZip(e.target.result); 
-            var exportLog = zip.folder("META-INF").file("export.log");
-            var exportText = exportLog.asText();
-            objectArray = parseExportLog(exportText,theFile.name,objectArray);
-            // console.log(objectArray);
-            fileCounter++;
-            if(fileCounter===files.length) {
-              renderUI(objectArray);
-            }
-          } catch(e) {
-            var $fileContent = $("<div>", {
-              "class" : "alert alert-danger",
-              text : "Error reading " + theFile.name + " : " + e.message
-            });
-          }
-        }
-      })(f);
-
-      reader.readAsArrayBuffer(f);
-    }
-
-  });
-
-function parseExportLog(exportText, filename, objectArray) {
-  var lines = exportText.split('\n');
-
-  for(var line = 1; line < lines.length; line++){ 
-    // Skip the first line of the export log (line = 1)
-    if (lines[line].length <= 1) { 
-      // End when the list of objects is done (at a blank line) and remove the application line (always the last line)
-      // objectArray.pop();
-      break;
-    }
-
-    var exportLine = lines[line].split(' ');
-    var objName = lines[line].slice(lines[line].indexOf('"')).replace(/"/g,'');
-    var dupInfo = isDuplicateObject(exportLine, objectArray);
-    
-    var newObject = {
-      type: exportLine[0],
-      id: exportLine[1],
-      uuid: exportLine[2],
-      name: objName,
-      filename: filename,
-      duplicate: dupInfo[0],
-      dupNum: dupInfo[1]
-    };
-    objectArray.push(newObject);
-
-  }
-  return objectArray;
-}
-
-function isDuplicateObject(exportLine, objectArray) {
-  for (var i = 0, l = objectArray.length; i < l; i++) {
-    if(exportLine[2]===objectArray[i].uuid){
-      duplicateCounter++;
-      objectArray[i].duplicate = true;
-      objectArray[i].dupNum = duplicateCounter;
-
-      return [true, duplicateCounter];
-    }
-  }
-  return [false, null];
-}
-
-
-
-function renderUI(objectArray) {
-  $result.append('<div class="col-sm-12">' +
-                    '<table id="results-table" class="table table-hover table-bordered table-striped table-condensed tablesorter">' +
-                      '<thead>' +
-                        '<th>Package</th>' +
-                        '<th>Object</th>' +
-                        '<th>Type</th>' +
-                        '<th>Duplicate</th>' +
-                      '</thead>' +
-                      '<tbody></tbody>' +
-                    '</table>' +
-                  '</div>');
-
-  var $tableBody = $("#results-table tbody");
-  objectArray.forEach( function (object) {
-    $tableBody.append(
-      '<tr '+(object.duplicate ? 'class="danger"' : '')+'>' +
-      '<td>'+object.filename+'</td>' +
-      '<td>'+object.name+'</td>' +
-      '<td>'+object.type+'</td>' +
-      '<td>'+object.duplicate+'</td>' +
-      '</tr>');
-  });
-  $("#results-table").tablesorter(); 
-}
-
-})();
-</script>
 
 
 
